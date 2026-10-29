@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>reviewTab</title>
+<style>
+  :root {
+    color-scheme: light;
+    --fs: 13px; --barra: 46px;
+    --fondo: #f6f7f9; --carta: #fff; --testa: #eef1f5; --attivo: #dde7f7;
+    --bordo: #d0d4da; --bordo-riga: #98a1ac; --testo: #1f2328; --tenue: #6a737d;
+    --accento: #3b82f6; --fuoco: #93b4ea; --avviso: #c26a00; --x: #d33a2f; --orig: rgba(0,0,0,.03); --bordo-pal: rgba(0,0,0,.25);
+    --rosso: #f8d6d4; --arancio: #fde3c6; --giallo: #fcf2bd; --verde: #d6efd7;
+    --rosso-p: #e06666; --arancio-p: #f0a040; --giallo-p: #d9b92a; --verde-p: #5cb85c;
+  }
+  body.notte {
+    color-scheme: dark;
+    --fondo: #16181c; --carta: #1e2127; --testa: #2a2e36; --attivo: #34425a;
+    --bordo: #3a3f48; --bordo-riga: #66707d; --testo: #e3e6ea; --tenue: #9aa3ad;
+    --accento: #60a5fa; --fuoco: #4a6fa8; --avviso: #f0a040; --x: #f87171; --orig: rgba(255,255,255,.04); --bordo-pal: rgba(255,255,255,.35);
+    --rosso: #4b2a2a; --arancio: #4a3622; --giallo: #44401f; --verde: #23402a;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: var(--fs)/1.45 system-ui, "Segoe UI", sans-serif; color: var(--testo); background: var(--fondo); }
+
+  #barra { position: sticky; top: 0; z-index: 30; height: var(--barra); display: flex; align-items: center; gap: 6px;
+           padding: 0 10px; background: var(--carta); border-bottom: 1px solid var(--bordo); }
+  #barra button { font: inherit; font-size: 15px; line-height: 1; padding: 6px 9px; border: 1px solid var(--bordo);
+                  border-radius: 6px; background: var(--carta); color: var(--testo); cursor: pointer; }
+  #barra button:hover:not(:disabled) { background: var(--testa); }
+  #barra button:disabled { opacity: .4; cursor: default; }
+  #barra button.attivo { background: var(--attivo); }
+  #barra .sep { width: 1px; align-self: stretch; margin: 8px 4px; background: var(--bordo); }
+  #bFontMeno span { font-size: 11px; } #bFontPiu span { font-size: 17px; }
+  #nomefile { font-weight: 600; margin-left: 8px; }
+  #recap { margin-left: auto; white-space: nowrap; color: var(--tenue); }
+  #recap .pr { color: var(--rosso-p); } #recap .pa { color: var(--arancio-p); }
+  #recap .pg { color: var(--giallo-p); } #recap .pv { color: var(--verde-p); }
+  #recap .festa { display: inline-block; font-size: 17px; animation: festa .5s ease-out; }
+  @keyframes festa { from { transform: scale(.2) rotate(-30deg); } to { transform: none; } }
+  #stato { margin-left: auto; color: var(--tenue); }
+  #stato.sporco { color: var(--avviso); }
+
+  #aiuto { position: fixed; top: calc(var(--barra) + 6px); right: 10px; z-index: 40; background: var(--carta); border: 1px solid var(--bordo);
+           border-radius: 8px; padding: 10px 14px; box-shadow: 0 4px 16px rgba(0,0,0,.25); line-height: 1.8; }
+  #aiuto b { display: inline-block; min-width: 72px; }
+
+  #avvio { max-width: 480px; margin: 70px auto; padding: 24px; background: var(--carta); border: 1px solid var(--bordo);
+           border-radius: 10px; text-align: center; }
+  #avvio p { color: var(--tenue); margin: 0 0 14px; }
+  #avvio button { display: block; width: 100%; margin: 8px 0; padding: 10px; font: inherit; font-size: 14px; color: var(--testo);
+                  border: 1px solid var(--bordo); border-radius: 8px; background: var(--carta); cursor: pointer; }
+  #avvio button:hover { background: var(--testa); }
+
+  #tabella { width: 100%; min-width: 1100px; border-collapse: collapse; table-layout: fixed; background: var(--carta); }
+  #tabella th { position: sticky; top: var(--barra); z-index: 20; background: var(--testa); border: 1px solid var(--bordo);
+                border-bottom: 2px solid var(--bordo-riga); padding: 6px 8px; text-align: left; font-weight: 600;
+                white-space: nowrap; overflow: hidden; }
+  #tabella th button { font: inherit; border: none; background: none; cursor: pointer; padding: 0 4px; color: var(--tenue); }
+  #tabella th button:hover, #tabella th button.attivo { color: var(--testo); }
+  #tabella td { position: relative; border: 1px solid var(--bordo); border-bottom: 2px solid var(--bordo-riga);
+                vertical-align: top; padding: 0; }
+  #tabella tr[data-colore="rosso"] > td   { background: var(--rosso); }
+  #tabella tr[data-colore="arancio"] > td { background: var(--arancio); }
+  #tabella tr[data-colore="giallo"] > td  { background: var(--giallo); }
+  #tabella tr[data-colore="verde"] > td   { background: var(--verde); }
+  #tabella textarea { display: block; width: 100%; border: 0; margin: 0; resize: none; overflow: hidden; background: transparent;
+                      font: inherit; color: inherit; padding: 6px 8px; min-height: 30px; outline: none; }
+  #tabella textarea:focus { box-shadow: inset 0 0 0 2px var(--fuoco); }
+  #tabella textarea.taorig { font-style: italic; }
+
+  td.cid { padding: 4px !important; text-align: center; }
+  td.cid input { width: 100%; font: inherit; font-weight: 600; text-align: center; border: 1px solid transparent; border-radius: 4px;
+                 padding: 2px; background: transparent; color: inherit; }
+  td.cid input:hover, td.cid input:focus { border-color: var(--bordo); background: var(--carta); outline: none; }
+  .maniglia { display: block; cursor: grab; color: var(--tenue); font-size: 16px; user-select: none; }
+  .comandi { display: flex; justify-content: center; gap: 3px; margin-top: 2px; }
+  .borig, .bpic { min-width: 22px; height: 20px; padding: 0 3px; border: 1px solid var(--bordo); border-radius: 4px;
+                  background: var(--carta); color: var(--testo); cursor: pointer; font-size: 12px; line-height: 18px; opacity: .6; }
+  .borig:hover, .borig.attivo, .bpic:hover { opacity: 1; }
+  .brim { color: var(--x); font-weight: 700; }
+  tr.nascosta > td { opacity: .45; }
+  tr.nascosta > td.cid { opacity: 1; }
+
+  .tav { display: flex; justify-content: center; gap: 2px; margin: 3px 0; visibility: hidden; }
+  td.cid:hover > .tav, td.cid:focus-within > .tav { visibility: visible; }
+  .tav button { width: 12px; height: 12px; padding: 0; border-radius: 50%; border: 1px solid var(--bordo-pal); cursor: pointer;
+                font-size: 8px; line-height: 10px; color: var(--tenue); background: var(--carta); }
+  .tav .rosso { background: var(--rosso-p); }
+  .tav .arancio { background: var(--arancio-p); }
+  .tav .giallo { background: var(--giallo-p); }
+  .tav .verde { background: var(--verde-p); }
+
+  .orig { border-top: 1px dashed var(--bordo); background: var(--orig); }
+  .etorig { font-size: .85em; color: var(--tenue); padding: 3px 8px 0; }
+
+  tr.trascina { opacity: .4; }
+  tr.sopra > td { box-shadow: inset 0 3px 0 var(--accento); }
+  tr.sotto > td { box-shadow: inset 0 -3px 0 var(--accento); }
+</style>
+</head>
+<body>
+
+<div id="barra">
+  <button id="bNuovo" title="Nuovo progetto (chiede nome e cartella del file)">🆕</button>
+  <button id="bApri" title="Apri il file dati (.json)">📂</button>
+  <button id="bSalva" title="Salva (Ctrl+S)" disabled>💾</button>
+  <button id="bAggiungi" title="Aggiungi una riga in fondo" disabled>＋</button>
+  <button id="bNascoste" title="Mostra/nascondi le righe rimosse" disabled>👁</button>
+  <button id="bOrig" title="Mostra/nascondi tutti i testi originali" disabled>📄</button>
+  <button id="bDocx" title="Esporta .docx: domande in corsivo + risposte, in ordine di ID" disabled>⤓ .docx</button>
+  <span class="sep"></span>
+  <button id="bFontMeno" title="Testo più piccolo"><span>A</span></button>
+  <button id="bFontReset" title="Dimensione predefinita del testo">↺</button>
+  <button id="bFontPiu" title="Testo più grande"><span>A</span></button>
+  <button id="bTema" title="Modalità notte">🌙</button>
+  <span id="nomefile"></span>
+  <span id="recap" hidden></span>
+  <span id="stato">nessun file aperto</span>
+  <button id="bAiuto" title="Aiuto">?</button>
+</div>
+
+<div id="aiuto" hidden>
+  <div><b>🆕</b> nuovo progetto (chiede nome e cartella del file)</div>
+  <div><b>Ctrl+S</b> salva</div>
+  <div><b>Alt+1…4</b> colore della riga (dove c'è il cursore o sotto il mouse): rosso, arancio, giallo, verde</div>
+  <div><b>Alt+C</b> nessun colore</div>
+  <div><b>⠿</b> trascina per spostare la riga</div>
+  <div><b>⇅</b> ordina per ID · <b style="min-width:0">🚦</b> ordina per gravità (di nuovo: inverte)</div>
+  <div><b>＋</b> nuova riga sotto (dalla barra: in fondo)</div>
+  <div><b style="color:var(--x)">✕</b> rimuove la riga: resta nel file come nascosta</div>
+  <div><b>👁</b> mostra le righe rimosse · <b style="min-width:0">↺</b> ripristina</div>
+  <div><b>📄</b> testo originale del revisore (usato nell'export)</div>
+  <div>Le righe completamente vuote non vengono salvate.</div>
+  <div><b>⤓ .docx</b> domande in corsivo + risposte, in ordine di ID (nome = nome del progetto)</div>
+  <div><b>A ↺ A</b> dimensione del testo · <b style="min-width:0">🌙</b> modalità notte</div>
+</div>
+
+<div id="avvio">
+  <p>Apri un file dati (es. <b>revisione_dati.json</b>) o crea un nuovo progetto.<br>Per salvare con Ctrl+S serve Chrome o Edge.</p>
+  <button id="aApri">📂 Apri file dati</button>
+  <button id="aNuovo">🆕 Nuovo progetto</button>
+  <button id="aRiprendi" hidden></button>
+  <button id="aBozza" hidden></button>
+</div>
+
+<table id="tabella" hidden>
+  <colgroup><col style="width:86px"><col style="width:22%"><col style="width:28%"><col style="width:25%"><col></colgroup>
+  <thead><tr>
+    <th>ID<button data-ordina="id" data-etichetta="⇅" title="Ordina per ID (di nuovo: inverte)">⇅</button><button
+        data-ordina="gravita" data-etichetta="🚦" title="Ordina per gravità (di nuovo: inverte)">🚦</button></th>
+    <th>💬 Revisore</th>
+    <th>🔍 Commenti</th>
+    <th>🛠 Da fare</th>
+    <th>✉ Risposta</th>
+  </tr></thead>
+  <tbody></tbody>
+</table>
+
+<input type="file" id="inputFile" accept=".json,application/json" hidden>
+
+<script>
+'use strict';
+
+const CAMPI = ['revisore', 'commenti', 'azioni', 'risposta'];
+const COLORI = ['rosso', 'arancio', 'giallo', 'verde'];
+const NOMI_COLORE = { rosso: 'Rosso · grave', arancio: 'Arancio · medio', giallo: 'Giallo · lieve', verde: 'Verde · risolto' };
+const GRAVITA = { rosso: 0, arancio: 1, giallo: 2, verde: 4 };   // nessun colore = 3
+const CHIAVE_BOZZA = 'reviewtab-bozza';
+const TIPI_JSON = [{ description: 'Dati revisione', accept: { 'application/json': ['.json'] } }];
+const MIME_DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const collatore = new Intl.Collator('it', { numeric: true, sensitivity: 'base' });
+const confrontaId = (a, b) => collatore.compare(a, b);
+const gravita = c => GRAVITA[c] ?? 3;
+
+let dati = null, handle = null, nomeFile = '', sporco = false, modifiche = 0;
+let timerBozza = 0, trascinata = null, salvando = false;
+const chiusiOrig = new Set();                // righe con il testo originale nascosto (di default è visibile)
+const ordine = { chiave: null, verso: 1 };
+
+// preferenze di visualizzazione: salvate nel file dati; il browser tiene le ultime usate
+const CHIAVE_PREF = 'reviewtab-preferenze';
+const FS_DEFAULT = 13, FS_MIN = 10, FS_MAX = 22;
+function normalizzaPref(p) {
+  p = p || {};
+  return {
+    notte: !!p.notte,                             // modalità notte
+    fs: Math.min(FS_MAX, Math.max(FS_MIN, Math.round(Number(p.fs)) || FS_DEFAULT)),   // dimensione del testo (px)
+    nascoste: !!p.nascoste,                       // righe rimosse visibili
+    originali: p.originali !== false,             // testi originali visibili
+  };
+}
+const pref = normalizzaPref(null);
+try { Object.assign(pref, normalizzaPref(JSON.parse(localStorage.getItem(CHIAVE_PREF)))); } catch (e) { /* preferenze predefinite */ }
+
+const $ = id => document.getElementById(id);
+function el(tag, cls, testo) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (testo != null) e.textContent = testo;
+  return e;
+}
+
+// ---------- dati ----------
+function normalizza(d) {
+  if (!d || !Array.isArray(d.righe)) throw new Error('manca l\'elenco "righe"');
+  const s = v => (v == null ? '' : String(v));
+  return {
+    versione: d.versione ?? 1,
+    salvato: s(d.salvato),
+    preferenze: d.preferenze && typeof d.preferenze === 'object' ? normalizzaPref(d.preferenze) : null,
+    righe: d.righe.map(r => {
+      r = r || {};
+      const riga = { id: s(r.id), originale: s(r.originale) };
+      for (const k of CAMPI) riga[k] = s(r[k]);
+      let colore = COLORI.includes(r.colore) ? r.colore : null;
+      if (!colore && r.colori && typeof r.colori === 'object') {   // formato precedente: un colore per cella → il più grave
+        const vecchi = Object.values(r.colori).filter(c => COLORI.includes(c));
+        if (vecchi.length) colore = vecchi.reduce((a, b) => (gravita(b) < gravita(a) ? b : a));
+      }
+      riga.colore = colore;
+      riga.visibile = r.visibile !== false;
+      return riga;
+    })
+  };
+}
+
+const CAMPI_TESTO = ['id', 'originale', ...CAMPI];
+const vuota = r => CAMPI_TESTO.every(k => !r[k].trim());
+const nuovaRiga = () => ({ id: '', originale: '', revisore: '', commenti: '', azioni: '', risposta: '', colore: null, visibile: true });
+// ciò che finisce nel file: tutte le righe (anche le nascoste), tranne quelle completamente vuote
+function datiDaSalvare() {
+  return { versione: dati.versione, salvato: dati.salvato, preferenze: { ...pref }, righe: dati.righe.filter(r => !vuota(r)) };
+}
+
+function oraLocale(d = new Date()) {
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+const fmtData = t => new Date(t).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' });
+
+function aggiornaStato(msg) {
+  const st = $('stato');
+  st.classList.toggle('sporco', sporco);
+  st.textContent = !dati ? 'nessun file aperto'
+    : sporco ? '● modifiche non salvate'
+    : msg || (dati.salvato ? `✓ salvato ${dati.salvato.replace('T', ' ')}` : '✓');
+  $('nomefile').textContent = nomeFile;
+  for (const id of ['bSalva', 'bAggiungi', 'bNascoste', 'bOrig', 'bDocx']) $(id).disabled = !dati;
+  document.title = (sporco ? '● ' : '') + 'reviewTab' + (nomeFile ? ' · ' + nomeFile : '');
+  aggiornaRecap();
+}
+
+// riepilogo dei colori: righe visibili e non vuote (quelle che vanno nel file e nell'export)
+function aggiornaRecap() {
+  const box = $('recap');
+  if (!dati) { box.hidden = true; return; }
+  const righe = dati.righe.filter(r => r.visibile && !vuota(r));
+  const n = { rosso: 0, arancio: 0, giallo: 0, verde: 0, nessuno: 0 };
+  for (const r of righe) n[r.colore || 'nessuno']++;
+  const tot = righe.length;
+  const perc = tot ? Math.round(100 * n.verde / tot) : 0;
+  const tutto = tot > 0 && n.verde === tot;
+  const html = COLORI.map(c => `<span class="p${c[0]}">●</span> ${n[c]}`).join('&ensp;') +
+    `&ensp;○ ${n.nessuno}&emsp;✓ ${perc}%` + (tutto ? ' <span class="festa">🎉</span>' : '');
+  if (box._html !== html) { box.innerHTML = html; box._html = html; }   // riscrive solo se cambia (così l'animazione non si ripete)
+  box.title = `${tot} righe · rosso ${n.rosso} · arancio ${n.arancio} · giallo ${n.giallo} · verde ${n.verde} · ` +
+              `senza colore ${n.nessuno} · risolte ${perc}%` + (tutto ? ' · tutto risolto!' : '');
+  box.hidden = false;
+}
+
+function modificato() {
+  sporco = true; modifiche++;
+  aggiornaStato();
+  clearTimeout(timerBozza);
+  timerBozza = setTimeout(salvaBozza, 400);
+}
+
+// ---------- bozza di sicurezza (memoria del browser) ----------
+function salvaBozza() {
+  try { localStorage.setItem(CHIAVE_BOZZA, JSON.stringify({ t: Date.now(), nome: nomeFile, dati: datiDaSalvare() })); } catch (e) { /* memoria piena o non disponibile */ }
+}
+function leggiBozza() {
+  try { const b = JSON.parse(localStorage.getItem(CHIAVE_BOZZA)); return b && b.dati ? b : null; } catch (e) { return null; }
+}
+function cancellaBozza() {
+  clearTimeout(timerBozza);
+  try { localStorage.removeItem(CHIAVE_BOZZA); } catch (e) { /* niente */ }
+}
+
+// ---------- IndexedDB: ricorda l'ultimo file aperto ----------
+function idb() {
+  return new Promise((ok, ko) => {
+    const r = indexedDB.open('reviewtab', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => ok(r.result);
+    r.onerror = () => ko(r.error);
+  });
+}
+async function idbGet(k) {
+  const db = await idb();
+  return new Promise((ok, ko) => {
+    const q = db.transaction('kv').objectStore('kv').get(k);
+    q.onsuccess = () => ok(q.result);
+    q.onerror = () => ko(q.error);
+  });
+}
+async function idbSet(k, v) {
+  const db = await idb();
+  return new Promise((ok, ko) => {
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(v, k);
+    tx.oncomplete = () => ok();
+    tx.onerror = () => ko(tx.error);
+  });
+}
+
+// ---------- apertura ----------
+function imposta(d, nome, h, controllaBozza) {
+  let recuperata = false;
+  if (controllaBozza) {
+    const b = leggiBozza();
+    if (b && b.nome === nome) {
+      let bd = null;
+      try { bd = normalizza(b.dati); } catch (e) { /* bozza illeggibile */ }
+      if (bd && JSON.stringify(bd) !== JSON.stringify(d)) {
+        if (confirm(`C'è una bozza non salvata di questo file (${fmtData(b.t)}).\n\nOK = recuperala · Annulla = scartala`)) {
+          d = bd; recuperata = true;
+        } else cancellaBozza();
+      }
+    }
+  }
+  dati = d; nomeFile = nome; handle = h; sporco = recuperata;
+  if (d.preferenze) { Object.assign(pref, d.preferenze); applicaPref(); }
+  ordine.chiave = null;
+  if (!dati.righe.some(r => r.visibile)) dati.righe.push(nuovaRiga());   // progetto vuoto: una riga da compilare (non salvata finché è vuota)
+  chiusiOrig.clear();
+  if (!pref.originali) dati.righe.forEach(r => chiusiOrig.add(r));
+  $('avvio').hidden = true;
+  $('tabella').hidden = false;
+  render();
+  aggiornaStato(recuperata ? null : '✓ aperto');
+}
+
+async function caricaDaHandle(h) {
+  const testo = await (await h.getFile()).text();
+  let d;
+  try { d = normalizza(JSON.parse(testo)); } catch (e) { throw new Error('file non valido (' + e.message + ')'); }
+  imposta(d, h.name, h, true);
+  idbSet('handle', h).catch(() => {});
+}
+
+async function apri() {
+  if (sporco && !confirm('Ci sono modifiche non salvate. Aprire comunque un altro file?')) return;
+  if (!window.showOpenFilePicker) { $('inputFile').click(); return; }
+  try {
+    const [h] = await showOpenFilePicker({ types: TIPI_JSON, multiple: false });
+    try { await h.requestPermission({ mode: 'readwrite' }); } catch (e) { /* verrà richiesto al primo salvataggio */ }
+    await caricaDaHandle(h);
+  } catch (e) {
+    if (e.name !== 'AbortError') alert('Apertura non riuscita: ' + e.message);
+  }
+}
+
+async function riprendi() {
+  try {
+    const h = await idbGet('handle');
+    if (!h) return;
+    if ((await h.requestPermission({ mode: 'readwrite' })) !== 'granted') { alert('Permesso non concesso: usa 📂 per aprire il file.'); return; }
+    await caricaDaHandle(h);
+  } catch (e) {
+    alert('Impossibile riaprire il file (' + e.message + '). Usa 📂 per aprirlo.');
+  }
+}
+
+async function recuperaBozza() {
+  const b = leggiBozza();
+  if (!b) return;
+  let h = null;
+  try { const x = await idbGet('handle'); if (x && x.name === b.nome) h = x; } catch (e) { /* niente */ }
+  try { imposta(normalizza(b.dati), b.nome || 'revisione_dati.json', h, false); }
+  catch (e) { alert('Bozza illeggibile: ' + e.message); return; }
+  sporco = true;
+  aggiornaStato();
+}
+
+$('inputFile').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  try { imposta(normalizza(JSON.parse(await f.text())), f.name, null, true); }
+  catch (err) { alert('Apertura non riuscita: ' + err.message); }
+});
+
+// ---------- salvataggio ----------
+function scarica(blob, nome) {
+  const a = el('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nome;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+async function scrivi(h, testo) {
+  if ((await h.queryPermission({ mode: 'readwrite' })) !== 'granted' &&
+      (await h.requestPermission({ mode: 'readwrite' })) !== 'granted') {
+    throw new Error('permesso di scrittura non concesso');
+  }
+  const w = await h.createWritable();
+  await w.write(testo);
+  await w.close();
+}
+
+// ---------- nuovo progetto ----------
+async function nuovo() {
+  if (sporco && !confirm('Ci sono modifiche non salvate. Creare comunque un nuovo progetto?')) return;
+  const d = normalizza({ versione: 1, salvato: oraLocale(), preferenze: { ...pref }, righe: [] });
+  if (!window.showSaveFilePicker) {                // browser senza salvataggio diretto: il nome serve per il download
+    let nome = (prompt('Nome del nuovo file:', 'nuova_revisione.json') || '').trim();
+    if (!nome) return;
+    if (!/\.json$/i.test(nome)) nome += '.json';
+    imposta(d, nome, null, false);
+  } else {
+    let h;
+    try {
+      h = await showSaveFilePicker({ suggestedName: 'nuova_revisione.json', types: TIPI_JSON });
+      await scrivi(h, JSON.stringify(d, null, 2) + '\n');
+    } catch (e) {
+      if (e.name !== 'AbortError') alert('Creazione non riuscita: ' + e.message);
+      return;
+    }
+    const b = leggiBozza();
+    if (b && b.nome === h.name) cancellaBozza();   // bozza di un vecchio file con lo stesso nome: non vale più
+    imposta(d, h.name, h, false);
+    idbSet('handle', h).catch(() => {});
+  }
+  const primo = $('tabella').tBodies[0].rows[0];
+  if (primo) primo.querySelector('td.cid input').focus();
+}
+
+async function salva() {
+  if (!dati || salvando) return;
+  salvando = true;
+  const prima = dati.salvato, versione = modifiche;
+  dati.salvato = oraLocale();
+  const testo = JSON.stringify(datiDaSalvare(), null, 2) + '\n';
+  try {
+    if (!window.showSaveFilePicker) {
+      scarica(new Blob([testo], { type: 'application/json' }), nomeFile || 'revisione_dati.json');
+    } else {
+      if (!handle) {
+        handle = await showSaveFilePicker({ suggestedName: nomeFile || 'revisione_dati.json', types: TIPI_JSON });
+        nomeFile = handle.name;
+        idbSet('handle', handle).catch(() => {});
+      }
+      await scrivi(handle, testo);
+    }
+    if (modifiche === versione) { sporco = false; cancellaBozza(); }
+    aggiornaStato();
+  } catch (e) {
+    dati.salvato = prima;
+    if (e.name !== 'AbortError') alert('Salvataggio non riuscito: ' + e.message);
+  } finally {
+    salvando = false;
+  }
+}
+
+// ==== DOCX ====
+function xmlEsc(s) {
+  return s.replace(/[^\t\n\r\x20-퟿-�\u{10000}-\u{10FFFF}]/gu, '')
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function paragrafo(testo, corsivo) {
+  if (!testo) return '<w:p/>';
+  const rpr = corsivo ? '<w:rPr><w:i/></w:rPr>' : '';
+  const t = xmlEsc(testo).split('\t').join('</w:t><w:tab/><w:t xml:space="preserve">');
+  return `<w:p><w:r>${rpr}<w:t xml:space="preserve">${t}</w:t></w:r></w:p>`;
+}
+
+const CRC_TAB = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(u8) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < u8.length; i++) c = CRC_TAB[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+// Archivio ZIP senza compressione (metodo "store"): basta per un .docx
+function zip(files, mime) {
+  const enc = new TextEncoder();
+  const d = new Date();
+  const ora = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  const giorno = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  const locali = [], centrale = [];
+  let offset = 0;
+  for (const f of files) {
+    const nome = enc.encode(f.nome), crc = crc32(f.dati), n = f.dati.length;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, ora, true); lh.setUint16(12, giorno, true); lh.setUint32(14, crc, true);
+    lh.setUint32(18, n, true); lh.setUint32(22, n, true); lh.setUint16(26, nome.length, true); lh.setUint16(28, 0, true);
+    locali.push(new Uint8Array(lh.buffer), nome, f.dati);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+    ch.setUint16(10, 0, true); ch.setUint16(12, ora, true); ch.setUint16(14, giorno, true); ch.setUint32(16, crc, true);
+    ch.setUint32(20, n, true); ch.setUint32(24, n, true); ch.setUint16(28, nome.length, true); ch.setUint16(30, 0, true);
+    ch.setUint16(32, 0, true); ch.setUint16(34, 0, true); ch.setUint16(36, 0, true); ch.setUint32(38, 0, true);
+    ch.setUint32(42, offset, true);
+    centrale.push(new Uint8Array(ch.buffer), nome);
+    offset += 30 + nome.length + n;
+  }
+  const dimCentrale = centrale.reduce((s, a) => s + a.length, 0);
+  const fine = new DataView(new ArrayBuffer(22));
+  fine.setUint32(0, 0x06054b50, true); fine.setUint16(4, 0, true); fine.setUint16(6, 0, true);
+  fine.setUint16(8, files.length, true); fine.setUint16(10, files.length, true);
+  fine.setUint32(12, dimCentrale, true); fine.setUint32(16, offset, true); fine.setUint16(20, 0, true);
+  return new Blob([...locali, ...centrale, new Uint8Array(fine.buffer)], { type: mime });
+}
+
+function creaDocx(righe) {
+  const linee = s => s.replace(/\r\n?/g, '\n').split('\n');
+  const p = [];
+  for (const r of [...righe].sort((a, b) => confrontaId(a.id, b.id))) {
+    p.push(paragrafo(r.id, false));
+    const domanda = r.originale.trim() ? r.originale : r.revisore;
+    for (const l of linee(domanda.trim())) p.push(paragrafo(l, true));
+    if (r.risposta.trim()) for (const l of linee(r.risposta.trim())) p.push(paragrafo(l, false));
+    p.push('<w:p/>');
+  }
+  const testa = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  const documento = testa +
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + p.join('') +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="1134" w:bottom="1134" w:left="1134"' +
+    ' w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+  const tipi = testa +
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+    '<Default Extension="xml" ContentType="application/xml"/>' +
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+    '</Types>';
+  const rels = testa +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+    '</Relationships>';
+  const enc = new TextEncoder();
+  return zip([
+    { nome: '[Content_Types].xml', dati: enc.encode(tipi) },
+    { nome: '_rels/.rels', dati: enc.encode(rels) },
+    { nome: 'word/document.xml', dati: enc.encode(documento) },
+  ], MIME_DOCX);
+}
+// ==== FINE DOCX ====
+
+async function esporta() {
+  if (!dati) return;
+  const blob = creaDocx(dati.righe.filter(r => r.visibile && !vuota(r)));
+  const nome = (nomeFile.trim() ? nomeFile.trim().replace(/\.json$/i, '') : 'risposta_revisori') + '.docx';
+  if (!window.showSaveFilePicker) { scarica(blob, nome); return; }
+  try {
+    const h = await showSaveFilePicker({ suggestedName: nome, types: [{ description: 'Documento Word', accept: { [MIME_DOCX]: ['.docx'] } }] });
+    const w = await h.createWritable();
+    await w.write(blob);
+    await w.close();
+    aggiornaStato('✓ .docx esportato');
+  } catch (e) {
+    if (e.name !== 'AbortError') alert('Export non riuscito: ' + e.message);
+  }
+}
+
+// ---------- tabella ----------
+function adatta(ta) {
+  if (!ta.offsetParent) return;                // nascosta
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+function adattaTutte() {
+  requestAnimationFrame(() => document.querySelectorAll('#tabella textarea').forEach(adatta));
+}
+
+function tingi(tr, col) {
+  if (col) tr.dataset.colore = col; else delete tr.dataset.colore;
+}
+function colora(tr, col) {
+  const r = tr._riga;
+  if (r.colore === col) return;
+  r.colore = col;
+  tingi(tr, col);
+  modificato();
+}
+
+function creaTavolozza() {
+  const d = el('div', 'tav');
+  [...COLORI, ''].forEach((col, i) => {
+    const b = el('button', 'pal ' + (col || 'nessuno'), col ? '' : '✕');
+    b.type = 'button';
+    b.tabIndex = -1;
+    b.dataset.colore = col;
+    b.title = (col ? NOMI_COLORE[col] : 'Nessun colore') + ` (Alt+${col ? i + 1 : 'C'})`;
+    d.append(b);
+  });
+  return d;
+}
+
+function creaArea(r, campo, cls) {
+  const ta = el('textarea', cls);
+  ta.rows = 1;
+  ta.value = r[campo];
+  if (campo === 'originale') ta.spellcheck = false;
+  ta.addEventListener('input', () => { r[campo] = ta.value; adatta(ta); modificato(); });
+  return ta;
+}
+
+function aggiornaOrig(tr) {
+  const vis = !chiusiOrig.has(tr._riga);
+  const box = tr.querySelector('.orig');
+  box.hidden = !vis;
+  tr.querySelector('.borig').classList.toggle('attivo', vis);
+  if (vis) adatta(box.querySelector('textarea'));
+}
+
+function pulisciIndicatori() {
+  document.querySelectorAll('#tabella tr.sopra, #tabella tr.sotto').forEach(t => t.classList.remove('sopra', 'sotto'));
+}
+
+function creaRiga(r) {
+  const tr = el('tr');
+  tr._riga = r;
+  tingi(tr, r.colore);
+  tr.classList.toggle('nascosta', !r.visibile);
+
+  const tdId = el('td', 'cid');
+  const maniglia = el('span', 'maniglia', '⠿');
+  maniglia.title = 'Trascina per spostare la riga';
+  maniglia.addEventListener('mousedown', () => { tr.draggable = true; });
+  const inp = el('input');
+  inp.value = r.id;
+  inp.spellcheck = false;
+  inp.title = 'ID (modificabile)';
+  inp.addEventListener('input', () => { r.id = inp.value; modificato(); });
+  const bo = el('button', 'borig', '📄');
+  bo.type = 'button';
+  bo.title = 'Testo originale del revisore (usato nell\'export)';
+  bo.addEventListener('click', () => {
+    if (chiusiOrig.has(r)) chiusiOrig.delete(r); else chiusiOrig.add(r);
+    aggiornaOrig(tr);
+  });
+  const bAgg = el('button', 'bpic', '＋');
+  bAgg.type = 'button';
+  bAgg.title = 'Aggiungi una riga qui sotto';
+  bAgg.addEventListener('click', () => aggiungiRiga(r));
+  const bRim = el('button', r.visibile ? 'bpic brim' : 'bpic', r.visibile ? '✕' : '↺');
+  bRim.type = 'button';
+  bRim.title = r.visibile ? 'Rimuovi la riga (resta nel file come nascosta)' : 'Ripristina la riga';
+  bRim.addEventListener('click', () => (r.visibile ? rimuoviRiga(r) : ripristinaRiga(r)));
+  const comandi = el('div', 'comandi');
+  comandi.append(bo, bAgg, bRim);
+  tdId.append(maniglia, inp, creaTavolozza(), comandi);
+  tr.append(tdId);
+
+  for (const c of CAMPI) {
+    const td = el('td');
+    td.dataset.campo = c;
+    td.append(creaArea(r, c));
+    if (c === 'revisore') {
+      const box = el('div', 'orig');
+      box.hidden = true;
+      box.append(el('div', 'etorig', '📄 originale → export'), creaArea(r, 'originale', 'taorig'));
+      td.append(box);
+    }
+    tr.append(td);
+  }
+  aggiornaOrig(tr);
+
+  tr.addEventListener('dragstart', e => {
+    if (!tr.draggable) return;                // trascinamento di testo dentro una cella
+    trascinata = r;
+    tr.classList.add('trascina');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', r.id);
+  });
+  tr.addEventListener('dragend', () => {
+    tr.draggable = false;
+    tr.classList.remove('trascina');
+    pulisciIndicatori();
+    trascinata = null;
+  });
+  tr.addEventListener('dragover', e => {
+    if (!trascinata) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const rc = tr.getBoundingClientRect();
+    const cls = e.clientY < rc.top + rc.height / 2 ? 'sopra' : 'sotto';
+    if (!tr.classList.contains(cls)) { pulisciIndicatori(); tr.classList.add(cls); }
+  });
+  tr.addEventListener('drop', e => {
+    if (!trascinata) return;
+    e.preventDefault();
+    sposta(trascinata, r, tr.classList.contains('sopra'));
+  });
+  return tr;
+}
+
+function render() {
+  const mostrate = dati.righe.filter(r => r.visibile || pref.nascoste);
+  $('tabella').tBodies[0].replaceChildren(...mostrate.map(creaRiga));
+  adattaTutte();
+  aggiornaIntestazioni();
+  aggiornaNascoste();
+}
+
+function aggiornaNascoste() {
+  const n = dati ? dati.righe.filter(r => !r.visibile).length : 0;
+  const b = $('bNascoste');
+  b.textContent = '👁' + (n ? ' ' + n : '');
+  b.classList.toggle('attivo', pref.nascoste);
+  b.title = `${pref.nascoste ? 'Nascondi' : 'Mostra'} le righe rimosse (${n})`;
+}
+
+function aggiungiRiga(dopo) {
+  const nuova = nuovaRiga();
+  if (!pref.originali) chiusiOrig.add(nuova);
+  const a = dati.righe;
+  if (dopo) a.splice(a.indexOf(dopo) + 1, 0, nuova); else a.push(nuova);
+  ordine.chiave = null;
+  render();
+  modificato();
+  const tr = [...$('tabella').tBodies[0].rows].find(t => t._riga === nuova);
+  if (tr) { tr.scrollIntoView({ block: 'nearest' }); tr.querySelector('td.cid input').focus(); }
+}
+
+function rimuoviRiga(r) {
+  if (vuota(r)) {                              // niente da perdere: non verrebbe comunque salvata
+    if (!confirm('Rimuovere la riga vuota?')) return;
+    dati.righe.splice(dati.righe.indexOf(r), 1);
+  } else {
+    const nome = r.id.trim() ? `«${r.id.trim()}»` : 'senza ID';
+    if (!confirm(`Rimuovere la riga ${nome}?\n\nResta nel file come nascosta: si può ripristinare con 👁.`)) return;
+    r.visibile = false;
+  }
+  chiusiOrig.delete(r);
+  render();
+  modificato();
+}
+
+function ripristinaRiga(r) {
+  r.visibile = true;
+  render();
+  modificato();
+}
+
+function sposta(src, dst, sopra) {
+  if (src === dst) return;
+  const a = dati.righe;
+  a.splice(a.indexOf(src), 1);
+  a.splice(a.indexOf(dst) + (sopra ? 0 : 1), 0, src);
+  ordine.chiave = null;
+  render();
+  modificato();
+}
+
+function ordina(chiave) {
+  if (!dati) return;
+  ordine.verso = ordine.chiave === chiave ? -ordine.verso : 1;
+  ordine.chiave = chiave;
+  const v = ordine.verso;
+  dati.righe.sort((x, y) => chiave === 'id'
+    ? v * confrontaId(x.id, y.id)
+    : v * (gravita(x.colore) - gravita(y.colore)) || confrontaId(x.id, y.id));
+  render();
+  modificato();
+}
+
+function aggiornaIntestazioni() {
+  document.querySelectorAll('#tabella th button[data-ordina]').forEach(b => {
+    const att = b.dataset.ordina === ordine.chiave;
+    const base = b.dataset.etichetta;
+    b.classList.toggle('attivo', att);
+    b.textContent = !att ? base : (b.dataset.ordina === 'id' ? '' : base) + (ordine.verso > 0 ? '▲' : '▼');
+  });
+}
+
+// ---------- eventi globali ----------
+document.addEventListener('mousedown', e => { if (e.target.closest('.pal')) e.preventDefault(); });   // non togliere il focus alla cella
+document.addEventListener('click', e => {
+  const b = e.target.closest('.pal');
+  if (b) colora(b.closest('tr'), b.dataset.colore || null);
+});
+let rigaSottoMouse = null;
+$('tabella').tBodies[0].addEventListener('mouseover', e => { rigaSottoMouse = e.target.closest('tr'); });
+$('tabella').tBodies[0].addEventListener('mouseleave', () => { rigaSottoMouse = null; });
+document.addEventListener('mouseup', () => {
+  if (!trascinata) document.querySelectorAll('#tabella tr[draggable="true"]').forEach(t => { t.draggable = false; });
+});
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    salva();
+    return;
+  }
+  if (e.altKey && !e.ctrlKey && !e.metaKey && /^(Digit|Numpad)[1-4]$|^KeyC$/.test(e.code)) {
+    // la riga dove c'è il cursore; altrimenti quella sotto il mouse
+    const a = document.activeElement;
+    let tr = a && a.closest ? a.closest('#tabella tbody tr') : null;
+    if (!tr && rigaSottoMouse && rigaSottoMouse.isConnected) tr = rigaSottoMouse;
+    if (!tr) return;
+    e.preventDefault();
+    const n = e.code === 'KeyC' ? 0 : Number(e.code.slice(-1));     // Alt+C = nessun colore
+    colora(tr, n ? COLORI[n - 1] : null);
+    return;
+  }
+  if (e.key === 'Escape') $('aiuto').hidden = true;
+}, true);
+
+let timerResize = 0;
+window.addEventListener('resize', () => { clearTimeout(timerResize); timerResize = setTimeout(adattaTutte, 150); });
+window.addEventListener('beforeunload', e => { if (sporco) { e.preventDefault(); e.returnValue = ''; } });
+
+$('bApri').addEventListener('click', apri);
+$('aApri').addEventListener('click', apri);
+$('bNuovo').addEventListener('click', nuovo);
+$('aNuovo').addEventListener('click', nuovo);
+$('aRiprendi').addEventListener('click', riprendi);
+$('aBozza').addEventListener('click', recuperaBozza);
+$('bSalva').addEventListener('click', salva);
+$('bDocx').addEventListener('click', esporta);
+$('bAiuto').addEventListener('click', () => { $('aiuto').hidden = !$('aiuto').hidden; });
+$('bOrig').addEventListener('click', () => {
+  if (!dati) return;
+  const righe = [...$('tabella').tBodies[0].rows].map(t => t._riga);
+  const tutti = righe.every(r => !chiusiOrig.has(r));
+  righe.forEach(r => (tutti ? chiusiOrig.add(r) : chiusiOrig.delete(r)));
+  document.querySelectorAll('#tabella tbody tr').forEach(aggiornaOrig);
+  pref.originali = !tutti;
+  modificato();
+});
+$('bAggiungi').addEventListener('click', () => { if (dati) aggiungiRiga(null); });
+$('bNascoste').addEventListener('click', () => {
+  if (!dati) return;
+  pref.nascoste = !pref.nascoste;
+  render();
+  modificato();
+});
+document.querySelectorAll('#tabella th button[data-ordina]').forEach(b => b.addEventListener('click', () => ordina(b.dataset.ordina)));
+
+// ---------- preferenze: applicazione e comandi ----------
+function applicaPref() {
+  document.body.classList.toggle('notte', !!pref.notte);
+  document.documentElement.style.setProperty('--fs', pref.fs + 'px');
+  $('bTema').textContent = pref.notte ? '☀️' : '🌙';
+  $('bTema').title = pref.notte ? 'Modalità giorno' : 'Modalità notte';
+  $('bFontMeno').title = `Testo più piccolo (${pref.fs}px)`;
+  $('bFontPiu').title = `Testo più grande (${pref.fs}px)`;
+  $('bFontReset').title = `Dimensione predefinita del testo (${FS_DEFAULT}px)`;
+  $('bFontReset').disabled = pref.fs === FS_DEFAULT;
+  try { localStorage.setItem(CHIAVE_PREF, JSON.stringify(pref)); } catch (e) { /* niente */ }
+  if (dati) adattaTutte();
+}
+function cambiaPref(f) {                         // fanno parte del file: un cambio è una modifica da salvare
+  f();
+  applicaPref();
+  if (dati) modificato();
+}
+$('bTema').addEventListener('click', () => cambiaPref(() => { pref.notte = !pref.notte; }));
+$('bFontMeno').addEventListener('click', () => cambiaPref(() => { pref.fs = Math.max(FS_MIN, pref.fs - 1); }));
+$('bFontReset').addEventListener('click', () => cambiaPref(() => { pref.fs = FS_DEFAULT; }));
+$('bFontPiu').addEventListener('click', () => cambiaPref(() => { pref.fs = Math.min(FS_MAX, pref.fs + 1); }));
+applicaPref();
+
+(async () => {
+  if (window.showOpenFilePicker) {
+    try {
+      const h = await idbGet('handle');
+      if (h) { $('aRiprendi').textContent = `↻ Riprendi «${h.name}»`; $('aRiprendi').hidden = false; }
+    } catch (e) { /* IndexedDB non disponibile */ }
+  } else {
+    $('avvio').querySelector('p').insertAdjacentHTML('beforeend',
+      '<br><b>Questo browser non salva direttamente: Ctrl+S scaricherà una copia del file.</b>');
+  }
+  const b = leggiBozza();
+  if (b) { $('aBozza').textContent = `🩹 Recupera bozza non salvata (${fmtData(b.t)})`; $('aBozza').hidden = false; }
+  aggiornaStato();
+})();
+</script>
+</body>
+</html>
