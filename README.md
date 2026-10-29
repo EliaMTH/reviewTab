@@ -51,7 +51,3 @@ Il pulsante **?** nella barra elenca tutti i comandi.
 
 - Il salvataggio diretto sul file usa la File System Access API (Chrome, Edge). Negli altri browser Ctrl+S scarica una copia.
 - Ogni modifica viene copiata anche nella memoria del browser, per recuperarla se la pagina si chiude prima del salvataggio.
-
-## Licenza
-
-[MIT](LICENSE)
