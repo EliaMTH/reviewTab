@@ -3,9 +3,11 @@
 Tabella locale per preparare le risposte ai revisori di un articolo.
 Un solo file HTML: niente installazione, niente server, funziona offline. I dati stanno in un file `.json` sul tuo computer.
 
+![reviewTab con dati di esempio](misc/reviewTab_sample.png)
+
 ## Uso
 
-1. Apri `revisione.html` con Chrome o Edge.
+1. Apri `reviewTab.html` con Chrome o Edge.
 2. 🆕 crea un nuovo progetto (chiede nome e cartella del file), oppure 📂 apri un `.json` esistente.
 3. Ctrl+S salva sul file. La volta successiva basta ↻ Riprendi.
 
